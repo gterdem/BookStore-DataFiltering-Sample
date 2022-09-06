@@ -1,9 +1,13 @@
-﻿using BookStore.Books;
+﻿using System.Collections.Generic;
+using BookStore.Books;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Volo.Abp;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
@@ -86,5 +90,22 @@ public class BookStoreDbContext :
             b.ConfigureByConvention(); //auto configure for the base class props
             b.Property(x => x.Name).IsRequired().HasMaxLength(128);
         });
+    }
+
+    protected override void ApplyAbpConceptsForAddedEntity(EntityEntry entry)
+    {
+        base.ApplyAbpConceptsForAddedEntity(entry);
+        if (entry.Entity is IEntity<IHaveOrganizationUnits>)
+        {
+            var entity = entry.Entity as IHaveOrganizationUnits;
+
+            var ouCodes = UnitOfWorkManager?.Current?.Items.GetOrDefault("ouCodes");
+
+            ObjectHelper.TrySetProperty(
+                entity,
+                x => x.OuCodes,
+                () => ouCodes
+            );
+        }
     }
 }
