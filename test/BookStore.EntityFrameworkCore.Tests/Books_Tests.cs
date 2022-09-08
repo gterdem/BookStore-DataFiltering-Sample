@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using BookStore.Books;
 using BookStore.EntityFrameworkCore;
 using Shouldly;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 using Volo.Abp.Security.Claims;
@@ -21,9 +22,11 @@ public class Books_Tests : BookStoreEntityFrameworkCoreTestBase
     private readonly IIdentityUserRepository _userRepository;
     private readonly ICurrentPrincipalAccessor _currentPrincipalAccessor;
     private readonly IBookRepository _bookRepository;
+    private readonly IDataFilter<IHaveOrganizationUnits> _ouFilter;
 
     public Books_Tests()
     {
+        _ouFilter = GetRequiredService<IDataFilter<IHaveOrganizationUnits>>();
         _bookRepository = GetRequiredService<IBookRepository>();
         _currentPrincipalAccessor = GetRequiredService<ICurrentPrincipalAccessor>();
         _userRepository = GetRequiredService<IIdentityUserRepository>();
@@ -71,6 +74,14 @@ public class Books_Tests : BookStoreEntityFrameworkCoreTestBase
                 }
             );
             testBook.OuCodes.ShouldNotBeEmpty();
+        }
+
+        var johnBooks = await _bookRepository.GetListAsync();
+        johnBooks.Count.ShouldBe(1);
+        using (_ouFilter.Disable())
+        {
+            var allBooks = await _bookRepository.GetListAsync();
+            allBooks.Count.ShouldBe(2);
         }
     }
 }

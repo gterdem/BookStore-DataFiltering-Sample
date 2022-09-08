@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -29,8 +30,10 @@ public class OrganizationUnitInterceptor : AbpInterceptor, IScopedDependency
 
     public async override Task InterceptAsync(IAbpMethodInvocation invocation)
     {
-        var ouCodes = AsyncHelper.RunSync(GetUserOrganizationUnits);
-        _unitOfWorkManager.Current.Items.Add("ouCodes", JsonSerializer.Serialize(ouCodes));
+        var ouCodes =  await GetUserOrganizationUnits();
+        var topOu = ouCodes.OrderBy(q => q.Length).FirstOrDefault();
+        topOu = topOu == null ? String.Empty : topOu;
+        _unitOfWorkManager.Current.Items.Add("ouCode", topOu);
         await invocation.ProceedAsync();
     }
 

@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using BookStore.Books;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Volo.Abp;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -99,7 +102,7 @@ public class BookStoreDbContext :
         {
             var entity = entry.Entity as IHaveOrganizationUnits;
 
-            var ouCodes = UnitOfWorkManager?.Current?.Items.GetOrDefault("ouCodes");
+            var ouCodes = UnitOfWorkManager?.Current?.Items.GetOrDefault("ouCode");
 
             ObjectHelper.TrySetProperty(
                 entity,
@@ -107,5 +110,33 @@ public class BookStoreDbContext :
                 () => ouCodes
             );
         }
+    }
+    
+    protected bool IsOrganizationUnitFilterEnabled => DataFilter?.IsEnabled<IHaveOrganizationUnits>() ?? false;
+
+    protected string OrganizationUnitCode => UnitOfWorkManager.Current?.Items.GetOrDefault("ouCode").ToString(); 
+
+    protected override bool ShouldFilterEntity<TEntity>(IMutableEntityType entityType)
+    {
+        if (typeof(IHaveOrganizationUnits).IsAssignableFrom(typeof(TEntity)))
+        {
+            return true;
+        }
+
+        return base.ShouldFilterEntity<TEntity>(entityType);
+    }
+
+    protected override Expression<Func<TEntity, bool>> CreateFilterExpression<TEntity>()
+    {
+        var expression = base.CreateFilterExpression<TEntity>();
+
+        if (typeof(IHaveOrganizationUnits).IsAssignableFrom(typeof(TEntity)))
+        {
+            Expression<Func<TEntity, bool>> organizationUnitFilter =
+                e => !IsOrganizationUnitFilterEnabled || EF.Property<string>(e, "OuCodes") == OrganizationUnitCode;
+            expression = expression == null ? organizationUnitFilter : CombineExpressions(expression, organizationUnitFilter);
+        }
+
+        return expression;
     }
 }
