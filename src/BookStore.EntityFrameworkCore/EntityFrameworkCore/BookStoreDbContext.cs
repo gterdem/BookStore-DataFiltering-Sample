@@ -95,7 +95,7 @@ public class BookStoreDbContext :
     protected override void ApplyAbpConceptsForAddedEntity(EntityEntry entry)
     {
         base.ApplyAbpConceptsForAddedEntity(entry);
-        if (entry.Entity is IEntity<IHaveOrganizationUnits>)
+        if (entry.Entity is IEntity and IHaveOrganizationUnits )
         {
             var entity = entry.Entity as IHaveOrganizationUnits;
 

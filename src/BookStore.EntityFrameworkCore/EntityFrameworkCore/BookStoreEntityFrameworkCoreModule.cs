@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -31,6 +32,7 @@ public class BookStoreEntityFrameworkCoreModule : AbpModule
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
         BookStoreEfCoreEntityExtensionMappings.Configure();
+        context.Services.OnRegistred(OrganizationUnitInterceptorRegistrar.RegisterIfNeeded);
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
